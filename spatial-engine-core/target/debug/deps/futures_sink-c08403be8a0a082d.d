@@ -1,0 +1,7 @@
+/data/data/com.termux/files/home/agentic-tools/spatial-engine-core/target/debug/deps/futures_sink-c08403be8a0a082d.d: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-sink-0.3.34/src/lib.rs
+
+/data/data/com.termux/files/home/agentic-tools/spatial-engine-core/target/debug/deps/libfutures_sink-c08403be8a0a082d.rlib: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-sink-0.3.34/src/lib.rs
+
+/data/data/com.termux/files/home/agentic-tools/spatial-engine-core/target/debug/deps/libfutures_sink-c08403be8a0a082d.rmeta: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-sink-0.3.34/src/lib.rs
+
+/data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-sink-0.3.34/src/lib.rs:

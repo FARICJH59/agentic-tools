@@ -1,0 +1,32 @@
+name: HOARE.ai Verification & Cloudflare Deployment
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  verify-and-deploy:
+    name: Formal Verification & Cloudflare Edge Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run HOARE Formal Verification Gate
+        run: |
+          chmod +x ./hoare_verify_pipeline.sh
+          ./hoare_verify_pipeline.sh
+
+      - name: Publish to Cloudflare Edge
+        uses: cloudflare/wrangler-action@v3
+        if: github.ref == 'refs/heads/main' && success()
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

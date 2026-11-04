@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial-4D Engine | WebXR Client</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0b0f19; font-family: monospace; color: #00ffcc; }
+        #info {
+            position: absolute; top: 10px; left: 10px; z-index: 10;
+            background: rgba(11, 15, 25, 0.85); padding: 15px; border: 1px solid #00ffcc;
+            border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,204,0.2);
+        }
+        h2 { margin: 0 0 10px 0; font-size: 16px; letter-spacing: 1px; }
+    </style>
+    <!-- Include Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="info">
+        <h2>SPATIAL-4D CLIENT</h2>
+        <div id="status">Connecting to ws://127.0.0.1:8080/ws-4d-sync...</div>
+        <div>Controls: W, A, S, D to move | Q, E for elevation</div>
+    </div>
+
+    <script>
+        const nodeId = "client_web_" + Math.random().toString(36.substring(2, 7));
+        const entityId = "avatar_" + nodeId;
+        
+        // Scene Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Grid & Lighting
+        const gridHelper = new THREE.GridHelper(50, 50, 0x00ffcc, 0x1f293d);
+        scene.add(gridHelper);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        // Local Entity State
+        const myState = {
+            entity_id: entityId,
+            position: { x: 0, y: 0.5, z: 0 },
+            rotation: [0, 0, 0, 1],
+            timestamp: Date.now(),
+            node_id: nodeId
+        };
+
+        const peers = {};
+
+        // WebSocket Connection
+        const ws = new WebSocket("ws://127.0.0.1:8080/ws-4d-sync");
+        const statusEl = document.getElementById("status");
+
+        ws.onopen = () => { statusEl.innerText = "Connected! Node ID: " + nodeId; };
+        ws.onerror = (err) => { statusEl.innerText = "WebSocket Error (Check Server)"; console.error(err); };
+        
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.entity_id === entityId) return; // Ignore own echoes
+
+                let mesh = peers[data.entity_id];
+                if (!mesh) {
+                    const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                    const material = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.3 });
+                    mesh = new THREE.Mesh(geometry, material);
+                    scene.add(mesh);
+                    peers[data.entity_id] = mesh;
+                }
+                mesh.position.set(data.position.x, data.position.y, data.position.z);
+            } catch (e) {
+                console.error("Failed to parse incoming delta", e);
+            }
+        };
+
+        // Keyboard Controls
+        const keys = {};
+        window.addEventListener("keydown", (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
+
+        // Local self visual representation
+        const selfGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const selfMaterial = new THREE.MeshStandardMaterial({ color: 0x00ffcc, roughness: 0.3 });
+        const selfMesh = new THREE.Mesh(selfGeometry, selfMaterial);
+        scene.add(selfMesh);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            let moved = false;
+            const speed = 0.08;
+            if (keys["w"]) { myState.position.z -= speed; moved = true; }
+            if (keys["s"]) { myState.position.z += speed; moved = true; }
+            if (keys["a"]) { myState.position.x -= speed; moved = true; }
+            if (keys["d"]) { myState.position.x += speed; moved = true; }
+            if (keys["q"]) { myState.position.y += speed; moved = true; }
+            if (keys["e"]) { myState.position.y = Math.max(0, myState.position.y - speed); moved = true; }
+
+            selfMesh.position.set(myState.position.x, myState.position.y, myState.position.z);
+
+            if (moved && ws.readyState === WebSocket.OPEN) {
+                myState.timestamp = Date.now();
+                ws.send(JSON.stringify(myState));
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+/data/data/com.termux/files/home/agentic-tools/spatial-engine-core/target/debug/libspatial_engine_core.rlib: /data/data/com.termux/files/home/agentic-tools/spatial-engine-core/src/crdt.rs /data/data/com.termux/files/home/agentic-tools/spatial-engine-core/src/lib.rs /data/data/com.termux/files/home/agentic-tools/spatial-engine-core/src/server.rs
